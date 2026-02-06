@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 新闻聚合与热度分析系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 系统简介 -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3>系统简介</h3>
+            </div>
+            <div class="card-body">
+                <p class="lead">新闻聚合与热度分析系统是一个自动化平台，能够从多个新闻来源获取最新资讯，并通过智能算法分析新闻热度趋势。</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>核心功能</h4>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <i class="bi bi-newspaper text-primary mr-2"></i>
+                                多源新闻聚合
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-bar-chart text-primary mr-2"></i>
+                                智能热度分析
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-trending-up text-primary mr-2"></i>
+                                热度趋势预测
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-pie-chart text-primary mr-2"></i>
+                                分类热度分析
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-gear text-primary mr-2"></i>
+                                自定义来源管理
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>支持的新闻来源</h4>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="card mb-2">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">腾讯新闻</h5>
+                                        <p class="card-text text-muted">实时热点资讯</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="card mb-2">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">网易新闻</h5>
+                                        <p class="card-text text-muted">深度报道分析</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="card mb-2">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">新浪新闻</h5>
+                                        <p class="card-text text-muted">综合新闻平台</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="card mb-2">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">央视新闻</h5>
+                                        <p class="card-text text-muted">权威新闻发布</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最近新闻 -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3>最近新闻</h3>
+                    <a href="{{ url_for('news_list') }}" class="btn btn-outline-light btn-sm">查看更多</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="latest-news" class="list-group">
+                    <!-- 新闻列表将通过JavaScript动态加载 -->
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">加载中...</span>
+                        </div>
+                        <p class="mt-2">加载最新新闻中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 侧边栏 -->
+    <div class="col-lg-4">
+        <!-- 系统状态 -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3>系统状态</h3>
+            </div>
+            <div class="card-body">
+                <div id="system-status">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">加载中...</span>
+                        </div>
+                        <p class="mt-2">加载系统状态中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 热度概览 -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3>热度概览</h3>
+                    <a href="{{ url_for('hot_rank') }}" class="btn btn-outline-light btn-sm">查看排行榜</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="hotness-overview">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">加载中...</span>
+                        </div>
+                        <p class="mt-2">加载热度数据中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3>快速操作</h3>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button id="refresh-news" class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat mr-2"></i>刷新新闻
+                    </button>
+                    <button id="analyze-hotness" class="btn btn-success">
+                        <i class="bi bi-bar-chart-line mr-2"></i>分析热度
+                    </button>
+                    <button id="init-sources" class="btn btn-info">
+                        <i class="bi bi-database mr-2"></i>初始化来源
+                    </button>
+                    <button id="view-settings" class="btn btn-outline-primary">
+                        <i class="bi bi-gear mr-2"></i>系统设置
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载系统状态
+        loadSystemStatus();
+        
+        // 加载最近新闻
+        loadLatestNews();
+        
+        // 加载热度概览
+        loadHotnessOverview();
+        
+        // 绑定按钮事件
+        document.getElementById('refresh-news').addEventListener('click', refreshNews);
+        document.getElementById('analyze-hotness').addEventListener('click', analyzeHotness);
+        document.getElementById('init-sources').addEventListener('click', initSources);
+        document.getElementById('view-settings').addEventListener('click', function() {
+            window.location.href = '{{ url_for('settings') }}';
+        });
+    });
+
+    // 加载系统状态
+    async function loadSystemStatus() {
+        try {
+            const sources = await apiRequest('/sources');
+            if (sources) {
+                const statusElement = document.getElementById('system-status');
+                let html = '<ul class="list-group">';
+                
+                sources.sources.forEach(source => {
+                    const statusClass = source.enabled ? 'text-success' : 'text-muted';
+                    const statusText = source.enabled ? '已启用' : '已禁用';
+                    html += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>${source.name}</span>
+                            <span class="${statusClass}">${statusText}</span>
+                        </li>
+                    `;
+                });
+                
+                html += '</ul>';
+                statusElement.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('加载系统状态失败:', error);
+        }
+    }
+
+    // 加载最近新闻
+    async function loadLatestNews() {
+        try {
+            const news = await apiRequest('/news?per_page=5&sort_by=publish_time&order=desc');
+            if (news) {
+                const newsElement = document.getElementById('latest-news');
+                let html = '';
+                
+                if (news.news_list && news.news_list.length > 0) {
+                    news.news_list.forEach(item => {
+                        const publishTime = new Date(item.publish_time).toLocaleString('zh-CN');
+                        html += `
+                            <a href="#" class="list-group-item list-group-item-action" onclick="viewNewsDetail(${item.id})">
+                                <div class="d-flex justify-content-between">
+                                    <h5 class="mb-1">${item.title}</h5>
+                                    <span class="text-muted small">${item.source}</span>
+                                </div>
+                                <p class="mb-1 text-muted">${item.content.substring(0, 100)}${item.content.length > 100 ? '...' : ''}</p>
+                                <small class="text-muted">${publishTime}</small>
+                            </a>
+                        `;
+                    });
+                } else {
+                    html = `
+                        <div class="text-center py-4">
+                            <i class="bi bi-newspaper text-muted" style="font-size: 3rem;"></i>
+                            <p class="mt-2 text-muted">暂无新闻数据</p>
+                        </div>
+                    `;
+                }
+                
+                newsElement.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('加载最近新闻失败:', error);
+        }
+    }
+
+    // 加载热度概览
+    async function loadHotnessOverview() {
+        try {
+            const hotness = await apiRequest('/analysis/hot-rank?limit=5');
+            if (hotness) {
+                const overviewElement = document.getElementById('hotness-overview');
+                let html = '<ul class="list-group">';
+                
+                if (hotness.top_news && hotness.top_news.length > 0) {
+                    hotness.top_news.forEach((item, index) => {
+                        const rankClass = index < 3 ? 'font-weight-bold' : '';
+                        const rankColor = index === 0 ? 'text-danger' : index === 1 ? 'text-orange' : index === 2 ? 'text-warning' : 'text-muted';
+                        html += `
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="${rankColor} ${rankClass} mr-2">${index + 1}.</span>
+                                    <span>${item.title.substring(0, 20)}${item.title.length > 20 ? '...' : ''}</span>
+                                </div>
+                                <span class="badge bg-primary">${item.hotness_score.toFixed(1)}</span>
+                            </li>
+                        `;
+                    });
+                } else {
+                    html = `
+                        <div class="text-center py-4">
+                            <i class="bi bi-trending-up text-muted" style="font-size: 3rem;"></i>
+                            <p class="mt-2 text-muted">暂无热度数据</p>
+                        </div>
+                    `;
+                }
+                
+                html += '</ul>';
+                overviewElement.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('加载热度概览失败:', error);
+        }
+    }
+
+    // 刷新新闻
+    async function refreshNews() {
+        showLoading();
+        try {
+            const result = await apiRequest('/news/refresh', 'POST');
+            if (result) {
+                alert(`成功刷新${result.fetched_count}条新闻`);
+                // 重新加载新闻列表
+                loadLatestNews();
+                // 重新加载系统状态
+                loadSystemStatus();
+            }
+        } catch (error) {
+            console.error('刷新新闻失败:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 分析热度
+    async function analyzeHotness() {
+        showLoading();
+        try {
+            const result = await apiRequest('/analysis/hotness');
+            if (result) {
+                alert('热度分析完成');
+                // 重新加载热度概览
+                loadHotnessOverview();
+            }
+        } catch (error) {
+            console.error('分析热度失败:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 初始化来源
+    async function initSources() {
+        showLoading();
+        try {
+            const result = await apiRequest('/sources/init', 'POST');
+            if (result) {
+                alert(`成功初始化${result.initialized_count}个新闻来源`);
+                // 重新加载系统状态
+                loadSystemStatus();
+            }
+        } catch (error) {
+            console.error('初始化来源失败:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 查看新闻详情
+    function viewNewsDetail(newsId) {
+        // 这里可以实现跳转到新闻详情页的逻辑
+        alert(`查看新闻ID: ${newsId}`);
+    }
+</script>
+{% endblock %}

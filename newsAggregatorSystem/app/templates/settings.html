@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}系统设置 - 新闻聚合与热度分析系统{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3>系统设置</h3>
+            <button id="save-settings" class="btn btn-outline-light btn-sm">
+                <i class="bi bi-save mr-2"></i>保存设置
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- 设置标签页 -->
+        <div class="mb-4">
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" id="tab-sources" data-bs-toggle="tab" href="#sources">新闻来源</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-analysis" data-bs-toggle="tab" href="#analysis">分析参数</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-system" data-bs-toggle="tab" href="#system">系统配置</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-about" data-bs-toggle="tab" href="#about">关于系统</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 设置内容 -->
+        <div class="tab-content">
+            <!-- 新闻来源设置 -->
+            <div class="tab-pane fade show active" id="sources">
+                <div class="mb-4">
+                    <h4>新闻来源管理</h4>
+                    <p class="text-muted">管理系统支持的新闻来源，可启用或禁用特定来源。</p>
+                    <button id="add-source" class="btn btn-primary btn-sm mb-3">
+                        <i class="bi bi-plus mr-2"></i>添加来源
+                    </button>
+                    <button id="refresh-sources" class="btn btn-outline-primary btn-sm mb-3">
+                        <i class="bi bi-arrow-repeat mr-2"></i>刷新列表
+                    </button>
+                </div>
+                
+                <div id="sources-list" class="table-responsive">
+                    <!-- 来源列表将通过JavaScript动态加载 -->
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">加载中...</span>
+                        </div>
+                        <p class="mt-2">加载新闻来源中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分析参数设置 -->
+            <div class="tab-pane fade" id="analysis">
+                <div class="mb-4">
+                    <h4>热度分析参数</h4>
+                    <p class="text-muted">调整热度分析算法的各项参数，以获得更准确的分析结果。</p>
+                </div>
+                
+                <form id="analysis-settings-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="hotness-weight-time" class="form-label">时间权重系数</label>
+                                <input type="range" class="form-range" id="hotness-weight-time" min="0" max="1" step="0.1" value="0.3">
+                                <div class="text-muted small">最近发布的新闻将获得更高权重</div>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="hotness-weight-source" class="form-label">来源权重系数</label>
+                                <input type="range" class="form-range" id="hotness-weight-source" min="0" max="1" step="0.1" value="0.2">
+                                <div class="text-muted small">不同来源的新闻将获得不同权重</div>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="hotness-weight-title" class="form-label">标题关键词权重系数</label>
+                                <input type="range" class="form-range" id="hotness-weight-title" min="0" max="1" step="0.1" value="0.25">
+                                <div class="text-muted small">标题中的关键词将影响热度评分</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="hotness-weight-content" class="form-label">内容关键词权重系数</label>
+                                <input type="range" class="form-range" id="hotness-weight-content" min="0" max="1" step="0.1" value="0.15">
+                                <div class="text-muted small">内容中的关键词将影响热度评分</div>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="hotness-weight-frequency" class="form-label">频率权重系数</label>
+                                <input type="range" class="form-range" id="hotness-weight-frequency" min="0" max="1" step="0.1" value="0.1">
+                                <div class="text-muted small">同一主题出现的频率将影响热度评分</div>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="analysis-interval" class="form-label">分析间隔（分钟）</label>
+                                <input type="number" class="form-control" id="analysis-interval" min="5" max="1440" value="30">
+                                <div class="text-muted small">系统自动分析热度的时间间隔</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 系统配置 -->
+            <div class="tab-pane fade" id="system">
+                <div class="mb-4">
+                    <h4>系统配置</h4>
+                    <p class="text-muted">调整系统的基本配置参数。</p>
+                </div>
+                
+                <form id="system-settings-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="news-fetch-interval" class="form-label">新闻抓取间隔（分钟）</label>
+                                <input type="number" class="form-control" id="news-fetch-interval" min="1" max="1440" value="15">
+                                <div class="text-muted small">系统自动抓取新闻的时间间隔</div>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="max-news-per-source" class="form-label">每个来源最大新闻数</label>
+                                <input type="number" class="form-control" id="max-news-per-source" min="10" max="1000" value="100">
+                                <div class="text-muted small">系统为每个来源保留的最大新闻数</div>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="news-retention-days" class="form-label">新闻保留天数</label>
+                                <input type="number" class="form-control" id="news-retention-days" min="1" max="365" value="30">
+                                <div class="text-muted small">系统保留新闻数据的天数</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label">系统功能</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auto-fetch" checked>
+                                    <label class="form-check-label" for="auto-fetch">自动抓取新闻</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auto-analyze" checked>
+                                    <label class="form-check-label" for="auto-analyze">自动分析热度</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="enable-logging" checked>
+                                    <label class="form-check-label" for="enable-logging">启用详细日志</label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="api-rate-limit" class="form-label">API请求限制（每分钟）</label>
+                                <input type="number" class="form-control" id="api-rate-limit" min="10" max="1000" value="100">
+                                <div class="text-muted small">系统每分钟允许的API请求数</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 关于系统 -->
+            <div class="tab-pane fade" id="about">
+                <div class="mb-4">
+                    <h4>关于新闻聚合与热度分析系统</h4>
+                    <p class="text-muted">系统版本信息和技术详情。</p>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>系统信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>系统名称：</strong>新闻聚合与热度分析系统
+                            </li>
+                            <li class="list-group-item">
+                                <strong>版本：</strong>1.0.0
+                            </li>
+                            <li class="list-group-item">
+                                <strong>开发语言：</strong>Python 3.9+
+                            </li>
+                            <li class="list-group-item">
+                                <strong>前端框架：</strong>Bootstrap 5, Chart.js
+                            </li>
+                            <li class="list-group-item">
+                                <strong>后端框架：</strong>Flask
+                            </li>
+                            <li class="list-group-item">
+                                <strong>数据库：</strong>SQLite
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>技术特点</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>核心功能</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">多源新闻聚合</li>
+                                    <li class="list-group-item">智能热度分析</li>
+                                    <li class="list-group-item">热度趋势预测</li>
+                                    <li class="list-group-item">分类热度分析</li>
+                                    <li class="list-group-item">数据可视化</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>技术优势</h6>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">模块化设计</li>
+                                    <li class="list-group-item">可扩展架构</li>
+                                    <li class="list-group-item">高效数据处理</li>
+                                    <li class="list-group-item">实时分析能力</li>
+                                    <li class="list-group-item">用户友好界面</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载新闻来源
+        loadSources();
+        
+        // 绑定事件
+        document.getElementById('save-settings').addEventListener('click', saveSettings);
+        document.getElementById('add-source').addEventListener('click', addSource);
+        document.getElementById('refresh-sources').addEventListener('click', loadSources);
+    });
+
+    // 加载新闻来源
+    async function loadSources() {
+        try {
+            const sources = await apiRequest('/sources');
+            if (sources) {
+                const sourcesElement = document.getElementById('sources-list');
+                let html = `
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>来源名称</th>
+                                <th>来源URL</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                sources.sources.forEach(source => {
+                    const statusClass = source.enabled ? 'text-success' : 'text-muted';
+                    const statusText = source.enabled ? '已启用' : '已禁用';
+                    const toggleText = source.enabled ? '禁用' : '启用';
+                    const toggleClass = source.enabled ? 'btn-danger' : 'btn-success';
+                    
+                    html += `
+                        <tr>
+                            <td>${source.name}</td>
+                            <td><a href="${source.url}" target="_blank">${source.url}</a></td>
+                            <td><span class="${statusClass}">${statusText}</span></td>
+                            <td>
+                                <button class="btn ${toggleClass} btn-sm mr-2" onclick="toggleSource(${source.id})">
+                                    ${toggleText}
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="editSource(${source.id})">
+                                    编辑
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+                sourcesElement.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('加载新闻来源失败:', error);
+        }
+    }
+
+    // 切换来源状态
+    async function toggleSource(sourceId) {
+        try {
+            const result = await apiRequest(`/sources/${sourceId}/toggle`, 'POST');
+            if (result) {
+                // 重新加载来源列表
+                loadSources();
+            }
+        } catch (error) {
+            console.error('切换来源状态失败:', error);
+        }
+    }
+
+    // 编辑来源
+    function editSource(sourceId) {
+        // 这里可以实现编辑来源的逻辑
+        alert('编辑来源功能开发中');
+    }
+
+    // 添加来源
+    function addSource() {
+        // 这里可以实现添加来源的逻辑
+        alert('添加来源功能开发中');
+    }
+
+    // 保存设置
+    async function saveSettings() {
+        showLoading();
+        try {
+            // 保存分析参数
+            const analysisSettings = {
+                hotness_weight_time: parseFloat(document.getElementById('hotness-weight-time').value),
+                hotness_weight_source: parseFloat(document.getElementById('hotness-weight-source').value),
+                hotness_weight_title: parseFloat(document.getElementById('hotness-weight-title').value),
+                hotness_weight_content: parseFloat(document.getElementById('hotness-weight-content').value),
+                hotness_weight_frequency: parseFloat(document.getElementById('hotness-weight-frequency').value),
+                analysis_interval: parseInt(document.getElementById('analysis-interval').value)
+            };
+            
+            // 保存系统配置
+            const systemSettings = {
+                news_fetch_interval: parseInt(document.getElementById('news-fetch-interval').value),
+                max_news_per_source: parseInt(document.getElementById('max-news-per-source').value),
+                news_retention_days: parseInt(document.getElementById('news-retention-days').value),
+                auto_fetch: document.getElementById('auto-fetch').checked,
+                auto_analyze: document.getElementById('auto-analyze').checked,
+                enable_logging: document.getElementById('enable-logging').checked,
+                api_rate_limit: parseInt(document.getElementById('api-rate-limit').value)
+            };
+            
+            // 这里可以实现保存设置的API调用
+            // await apiRequest('/settings/save', 'POST', { analysis: analysisSettings, system: systemSettings });
+            
+            alert('设置保存成功');
+        } catch (error) {
+            console.error('保存设置失败:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}数据分析 - 新闻聚合与热度分析系统{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3>数据分析</h3>
+            <div>
+                <button id="analyze-trends" class="btn btn-outline-light btn-sm mr-2">
+                    <i class="bi bi-trending-up mr-2"></i>分析趋势
+                </button>
+                <button id="export-data" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-download mr-2"></i>导出数据
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- 分析类型选择 -->
+        <div class="mb-4">
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" id="tab-overview" data-bs-toggle="tab" href="#overview">热度概览</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-trends" data-bs-toggle="tab" href="#trends">热度趋势</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-categories" data-bs-toggle="tab" href="#categories">分类分析</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-sources" data-bs-toggle="tab" href="#sources">来源分析</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 分析内容 -->
+        <div class="tab-content">
+            <!-- 热度概览 -->
+            <div class="tab-pane fade show active" id="overview">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h4>热度统计</h4>
+                            </div>
+                            <div class="card-body">
+                                <div id="hotness-stats">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="sr-only">加载中...</span>
+                                        </div>
+                                        <p class="mt-2">加载热度统计中...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h4>热度分布</h4>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="hotness-distribution-chart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 热度趋势 -->
+            <div class="tab-pane fade" id="trends">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4>热度趋势分析</h4>
+                            <div>
+                                <select id="trend-period" class="form-select form-select-sm w-auto">
+                                    <option value="7">最近7天</option>
+                                    <option value="30">最近30天</option>
+                                    <option value="90">最近90天</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="hotness-trend-chart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分类分析 -->
+            <div class="tab-pane fade" id="categories">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>分类热度分析</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <canvas id="category-hotness-chart" height="250"></canvas>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="category-stats">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="sr-only">加载中...</span>
+                                        </div>
+                                        <p class="mt-2">加载分类统计中...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 来源分析 -->
+            <div class="tab-pane fade" id="sources">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>来源热度分析</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <canvas id="source-hotness-chart" height="250"></canvas>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="source-stats">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="sr-only">加载中...</span>
+                                        </div>
+                                        <p class="mt-2">加载来源统计中...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化图表
+        initCharts();
+        
+        // 加载热度统计
+        loadHotnessStats();
+        
+        // 加载分类统计
+        loadCategoryStats();
+        
+        // 加载来源统计
+        loadSourceStats();
+        
+        // 绑定事件
+        document.getElementById('analyze-trends').addEventListener('click', analyzeTrends);
+        document.getElementById('export-data').addEventListener('click', exportData);
+        document.getElementById('trend-period').addEventListener('change', loadTrendData);
+    });
+
+    // 初始化图表
+    function initCharts() {
+        // 热度分布图表
+        const distributionCtx = document.getElementById('hotness-distribution-chart').getContext('2d');
+        window.hotnessDistributionChart = new Chart(distributionCtx, {
+            type: 'bar',
+            data: {
+                labels: ['0-20', '21-40', '41-60', '61-80', '81-100'],
+                datasets: [{
+                    label: '新闻数量',
+                    data: [0, 0, 0, 0, 0],
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 热度趋势图表
+        const trendCtx = document.getElementById('hotness-trend-chart').getContext('2d');
+        window.hotnessTrendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: '平均热度',
+                    data: [],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 分类热度图表
+        const categoryCtx = document.getElementById('category-hotness-chart').getContext('2d');
+        window.categoryHotnessChart = new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(153, 102, 255, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // 来源热度图表
+        const sourceCtx = document.getElementById('source-hotness-chart').getContext('2d');
+        window.sourceHotnessChart = new Chart(sourceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    }
+
+    // 加载热度统计
+    async function loadHotnessStats() {
+        try {
+            const stats = await apiRequest('/analysis/stats');
+            if (stats) {
+                const statsElement = document.getElementById('hotness-stats');
+                statsElement.innerHTML = `
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>总新闻数</span>
+                            <span class="badge bg-primary">${stats.total_news}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>平均热度</span>
+                            <span class="badge bg-primary">${stats.avg_hotness.toFixed(2)}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>最高热度</span>
+                            <span class="badge bg-primary">${stats.max_hotness.toFixed(2)}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>热度标准差</span>
+                            <span class="badge bg-primary">${stats.hotness_std.toFixed(2)}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>今日新增新闻</span>
+                            <span class="badge bg-primary">${stats.today_news}</span>
+                        </li>
+                    </ul>
+                `;
+
+                // 更新热度分布图表
+                if (window.hotnessDistributionChart) {
+                    window.hotnessDistributionChart.data.datasets[0].data = [
+                        stats.distribution['0-20'] || 0,
+                        stats.distribution['21-40'] || 0,
+                        stats.distribution['41-60'] || 0,
+                        stats.distribution['61-80'] || 0,
+                        stats.distribution['81-100'] || 0
+                    ];
+                    window.hotnessDistributionChart.update();
+                }
+            }
+        } catch (error) {
+            console.error('加载热度统计失败:', error);
+        }
+    }
+
+    // 加载趋势数据
+    async function loadTrendData() {
+        const period = document.getElementById('trend-period').value;
+        try {
+            const trends = await apiRequest(`/analysis/trends?period=${period}`);
+            if (trends) {
+                if (window.hotnessTrendChart) {
+                    window.hotnessTrendChart.data.labels = trends.dates;
+                    window.hotnessTrendChart.data.datasets[0].data = trends.hotness_values;
+                    window.hotnessTrendChart.update();
+                }
+            }
+        } catch (error) {
+            console.error('加载趋势数据失败:', error);
+        }
+    }
+
+    // 加载分类统计
+    async function loadCategoryStats() {
+        try {
+            const categories = await apiRequest('/analysis/categories');
+            if (categories) {
+                // 更新分类统计
+                const statsElement = document.getElementById('category-stats');
+                let statsHtml = '<ul class="list-group">';
+                categories.forEach(category => {
+                    statsHtml += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>${category.name}</span>
+                            <span class="badge bg-primary">${category.count}</span>
+                        </li>
+                    `;
+                });
+                statsHtml += '</ul>';
+                statsElement.innerHTML = statsHtml;
+
+                // 更新分类热度图表
+                if (window.categoryHotnessChart) {
+                    window.categoryHotnessChart.data.labels = categories.map(c => c.name);
+                    window.categoryHotnessChart.data.datasets[0].data = categories.map(c => c.count);
+                    window.categoryHotnessChart.update();
+                }
+            }
+        } catch (error) {
+            console.error('加载分类统计失败:', error);
+        }
+    }
+
+    // 加载来源统计
+    async function loadSourceStats() {
+        try {
+            const sources = await apiRequest('/analysis/sources');
+            if (sources) {
+                // 更新来源统计
+                const statsElement = document.getElementById('source-stats');
+                let statsHtml = '<ul class="list-group">';
+                sources.forEach(source => {
+                    statsHtml += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>${source.name}</span>
+                            <span class="badge bg-primary">${source.count}</span>
+                        </li>
+                    `;
+                });
+                statsHtml += '</ul>';
+                statsElement.innerHTML = statsHtml;
+
+                // 更新来源热度图表
+                if (window.sourceHotnessChart) {
+                    window.sourceHotnessChart.data.labels = sources.map(s => s.name);
+                    window.sourceHotnessChart.data.datasets[0].data = sources.map(s => s.count);
+                    window.sourceHotnessChart.update();
+                }
+            }
+        } catch (error) {
+            console.error('加载来源统计失败:', error);
+        }
+    }
+
+    // 分析趋势
+    async function analyzeTrends() {
+        showLoading();
+        try {
+            const result = await apiRequest('/analysis/trends/analyze', 'POST');
+            if (result) {
+                alert('趋势分析完成');
+                // 重新加载趋势数据
+                loadTrendData();
+            }
+        } catch (error) {
+            console.error('分析趋势失败:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 导出数据
+    async function exportData() {
+        showLoading();
+        try {
+            const result = await apiRequest('/analysis/export');
+            if (result) {
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.href = result.download_url;
+                link.download = `news_analysis_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+            }
+        } catch (error) {
+            console.error('导出数据失败:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+</script>
+{% endblock %}

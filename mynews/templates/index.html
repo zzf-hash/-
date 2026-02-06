@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <title>MyNews - 热点排行</title>
+    <style>
+      body{font-family: Arial, sans-serif;margin:20px}
+      .item{padding:8px;border-bottom:1px solid #eee}
+      .title{font-weight:600}
+      .meta{color:#666;font-size:12px}
+    </style>
+  </head>
+  <body>
+    <h1>热点新闻（按热度）</h1>
+    <div>
+      {% for it in items %}
+        <div class="item">
+          <div class="title"><a href="{{ it.url }}" target="_blank">{{ it.title }}</a></div>
+          <div class="meta">{{ it.source }} • {{ it.category }} • 热度: {{ '%.4f'|format(it.hotness) }}</div>
+        </div>
+      {% else %}
+        <div>暂无新闻，等待抓取。</div>
+      {% endfor %}
+    </div>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <title>MyNews - 热度排行榜</title>
+    <style>
+      body{font-family: Arial, sans-serif;margin:20px}
+      table{width:100%;border-collapse:collapse}
+      th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+      th{background:#f5f5f5}
+    </style>
+  </head>
+  <body>
+    <h1>热度排行榜</h1>
+    <table>
+      <thead><tr><th>#</th><th>标题</th><th>来源</th><th>分类</th><th>热度</th></tr></thead>
+      <tbody>
+      {% for it in items %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td><a href="{{ it.url }}" target="_blank">{{ it.title }}</a></td>
+          <td>{{ it.source }}</td>
+          <td>{{ it.category }}</td>
+          <td>{{ '%.6f'|format(it.hotness) }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5">暂无数据</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

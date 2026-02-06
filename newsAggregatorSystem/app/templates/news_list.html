@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}新闻列表 - 新闻聚合与热度分析系统{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3>新闻列表</h3>
+            <div class="d-flex gap-2">
+                <button id="refresh-news" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-arrow-repeat mr-1"></i>刷新
+                </button>
+                <div class="dropdown">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        筛选
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-source="all">全部来源</a></li>
+                        <li><a class="dropdown-item" href="#" data-source="腾讯新闻">腾讯新闻</a></li>
+                        <li><a class="dropdown-item" href="#" data-source="网易新闻">网易新闻</a></li>
+                        <li><a class="dropdown-item" href="#" data-source="新浪新闻">新浪新闻</a></li>
+                        <li><a class="dropdown-item" href="#" data-source="央视新闻">央视新闻</a></li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        排序
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-sort="publish_time">按时间</a></li>
+                        <li><a class="dropdown-item" href="#" data-sort="hotness">按热度</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="news-list" class="list-group">
+            <!-- 新闻列表将通过JavaScript动态加载 -->
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">加载中...</span>
+                </div>
+                <p class="mt-2">加载新闻列表中...</p>
+            </div>
+        </div>
+        <div id="pagination" class="mt-4">
+            <!-- 分页控件将通过JavaScript动态加载 -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载新闻列表
+        loadNewsList();
+        
+        // 绑定刷新按钮事件
+        document.getElementById('refresh-news').addEventListener('click', function() {
+            refreshNews();
+        });
+        
+        // 绑定筛选事件
+        document.querySelectorAll('.dropdown-item[data-source]').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const source = this.getAttribute('data-source');
+                loadNewsList(1, source);
+            });
+        });
+        
+        // 绑定排序事件
+        document.querySelectorAll('.dropdown-item[data-sort]').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sortBy = this.getAttribute('data-sort');
+                loadNewsList(1, null, sortBy);
+            });
+        });
+    });
+
+    // 加载新闻列表
+    async function loadNewsList(page = 1, source = null, sortBy = 'publish_time') {
+        try {
+            showLoading();
+            
+            let url = `/api/news?page=${page}&per_page=20`;
+            if (source && source !== 'all') {
+                url += `&source=${encodeURIComponent(source)}`;
+            }
+            if (sortBy) {
+                url += `&sort_by=${sortBy}&order=desc`;
+            }
+            
+            const response = await fetch(url);
+            const result = await response.json();
+            
+            if (result.code === 200) {
+                renderNewsList(result.data);
+                renderPagination(page, result.data.pages, source, sortBy);
+            } else {
+                alert(result.message || '加载失败');
+            }
+        } catch (error) {
+            console.error('加载新闻列表失败:', error);
+            alert('加载新闻列表失败');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 渲染新闻列表
+    function renderNewsList(data) {
+        const newsListElement = document.getElementById('news-list');
+        const newsList = data.news_list || [];
+        
+        if (newsList.length === 0) {
+            newsListElement.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="bi bi-newspaper text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-2 text-muted">暂无新闻数据</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        newsList.forEach(news => {
+            const publishTime = new Date(news.publish_time).toLocaleString('zh-CN');
+            html += `
+                <div class="list-group-item news-item">
+                    <div class="d-flex justify-content-between">
+                        <h5 class="mb-1">${news.title}</h5>
+                        <span class="badge bg-secondary">${news.source}</span>
+                    </div>
+                    <p class="mb-1 text-muted">${news.content.substring(0, 100)}${news.content.length > 100 ? '...' : ''}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">${publishTime}</small>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-primary">热度: ${news.hotness_score.toFixed(1)}</span>
+                            <a href="#" class="btn btn-sm btn-outline-primary" onclick="viewNewsDetail(${news.id})">查看</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        newsListElement.innerHTML = html;
+    }
+
+    // 渲染分页控件
+    function renderPagination(currentPage, totalPages, source, sortBy) {
+        const paginationElement = document.getElementById('pagination');
+        
+        if (totalPages <= 1) {
+            paginationElement.innerHTML = '';
+            return;
+        }
+        
+        let html = `
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+        `;
+        
+        // 上一页
+        html += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadNewsList(${currentPage - 1}, '${source}', '${sortBy}')">上一页</a>
+            </li>
+        `;
+        
+        // 页码
+        for (let i = 1; i <= totalPages; i++) {
+            html += `
+                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadNewsList(${i}, '${source}', '${sortBy}')">${i}</a>
+                </li>
+            `;
+        }
+        
+        // 下一页
+        html += `
+            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadNewsList(${currentPage + 1}, '${source}', '${sortBy}')">下一页</a>
+            </li>
+        `;
+        
+        html += `
+                </ul>
+            </nav>
+        `;
+        
+        paginationElement.innerHTML = html;
+    }
+
+    // 刷新新闻
+    async function refreshNews() {
+        try {
+            showLoading();
+            const result = await apiRequest('/news/refresh', 'POST');
+            if (result) {
+                alert(`成功刷新${result.fetched_count}条新闻`);
+                loadNewsList();
+            }
+        } catch (error) {
+            console.error('刷新新闻失败:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 查看新闻详情
+    function viewNewsDetail(newsId) {
+        // 这里可以实现跳转到新闻详情页的逻辑
+        alert(`查看新闻ID: ${newsId}`);
+    }
+</script>
+{% endblock %}

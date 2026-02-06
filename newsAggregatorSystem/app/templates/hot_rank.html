@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}热度排行榜 - 新闻聚合与热度分析系统{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3>热度排行榜</h3>
+            <div class="d-flex gap-2">
+                <button id="analyze-hotness" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-bar-chart-line mr-1"></i>分析热度
+                </button>
+                <div class="dropdown">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        时间范围
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-days="1">1天</a></li>
+                        <li><a class="dropdown-item" href="#" data-days="3">3天</a></li>
+                        <li><a class="dropdown-item" href="#" data-days="7">7天</a></li>
+                        <li><a class="dropdown-item" href="#" data-days="30">30天</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="hot-rank-list" class="list-group">
+            <!-- 热度排行榜将通过JavaScript动态加载 -->
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">加载中...</span>
+                </div>
+                <p class="mt-2">加载热度排行榜中...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载热度排行榜
+        loadHotRank();
+        
+        // 绑定分析热度按钮事件
+        document.getElementById('analyze-hotness').addEventListener('click', function() {
+            analyzeHotness();
+        });
+        
+        // 绑定时间范围事件
+        document.querySelectorAll('.dropdown-item[data-days]').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const days = this.getAttribute('data-days');
+                loadHotRank(days);
+            });
+        });
+    });
+
+    // 加载热度排行榜
+    async function loadHotRank(days = 7) {
+        try {
+            showLoading();
+            
+            const url = `/api/analysis/hot-rank?days=${days}&limit=50`;
+            const response = await fetch(url);
+            const result = await response.json();
+            
+            if (result.code === 200) {
+                renderHotRank(result.data);
+            } else {
+                alert(result.message || '加载失败');
+            }
+        } catch (error) {
+            console.error('加载热度排行榜失败:', error);
+            alert('加载热度排行榜失败');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 渲染热度排行榜
+    function renderHotRank(data) {
+        const hotRankElement = document.getElementById('hot-rank-list');
+        const topNews = data.top_news || [];
+        
+        if (topNews.length === 0) {
+            hotRankElement.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="bi bi-trending-up text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-2 text-muted">暂无热度数据</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        topNews.forEach((news, index) => {
+            const rankClass = index < 3 ? `rank-${index + 1}` : '';
+            const rankNumber = index + 1;
+            const publishTime = new Date(news.publish_time).toLocaleString('zh-CN');
+            
+            html += `
+                <div class="list-group-item hot-rank-item ${rankClass}">
+                    <div class="d-flex justify-content-between">
+                        <div class="d-flex align-items-start">
+                            <span class="badge ${index < 3 ? 'bg-danger' : 'bg-primary'} mr-2">${rankNumber}</span>
+                            <div>
+                                <h5 class="mb-1">${news.title}</h5>
+                                <p class="mb-1 text-muted">${news.content.substring(0, 80)}${news.content.length > 80 ? '...' : ''}</p>
+                                <div class="d-flex gap-2 text-sm text-muted">
+                                    <span>${news.source}</span>
+                                    <span>•</span>
+                                    <span>${publishTime}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="badge bg-primary mb-2">热度: ${news.hotness_score.toFixed(1)}</div>
+                            <a href="#" class="btn btn-sm btn-outline-primary" onclick="viewNewsDetail(${news.id})">查看</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        hotRankElement.innerHTML = html;
+    }
+
+    // 分析热度
+    async function analyzeHotness() {
+        try {
+            showLoading();
+            const result = await apiRequest('/analysis/hotness');
+            if (result) {
+                alert('热度分析完成');
+                loadHotRank();
+            }
+        } catch (error) {
+            console.error('分析热度失败:', error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 查看新闻详情
+    function viewNewsDetail(newsId) {
+        // 这里可以实现跳转到新闻详情页的逻辑
+        alert(`查看新闻ID: ${newsId}`);
+    }
+</script>
+{% endblock %}
